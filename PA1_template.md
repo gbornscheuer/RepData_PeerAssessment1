@@ -1,7 +1,7 @@
 ---
 title: "Course: Reproducible Research - Peer Assessment 1"
 author: "gbp"
-date: '`r format(Sys.time(), "%d %B, %Y")`'
+date: '16 October, 2015'
 output: html_document
 ---
 ### Introduction
@@ -40,63 +40,123 @@ dataset.
 
 ### 1. Loading and exploring the data and computing the total number of steps per day
 
-```{r, 1. First part of the assignment}
+
+```r
 suppressMessages(library(dplyr))
 Sys.setlocale("LC_TIME", "English")
+```
+
+```
+## [1] "English_United States.1252"
+```
+
+```r
 library(dplyr)
 library(ggplot2)
 library(lattice)
 library(knitr)
 datos <- read.csv("activity.csv", colClasses = c("numeric", "character", "character"))
 nrow(datos)
+```
+
+```
+## [1] 17568
+```
+
+```r
 summary(datos)
+```
+
+```
+##      steps            date             interval        
+##  Min.   :  0.00   Length:17568       Length:17568      
+##  1st Qu.:  0.00   Class :character   Class :character  
+##  Median :  0.00   Mode  :character   Mode  :character  
+##  Mean   : 37.38                                        
+##  3rd Qu.: 12.00                                        
+##  Max.   :806.00                                        
+##  NA's   :2304
+```
+
+```r
 str(datos)
+```
+
+```
+## 'data.frame':	17568 obs. of  3 variables:
+##  $ steps   : num  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : chr  "2012-10-01" "2012-10-01" "2012-10-01" "2012-10-01" ...
+##  $ interval: chr  "0" "5" "10" "15" ...
+```
+
+```r
 datosday <- datos %>% group_by(date) %>% summarise(stepsbyday = sum(steps, rm.na = TRUE))
 ```
 
 This is the histogram of the total number of steps taken each day:
 
-```{r, echo=FALSE}
-hist(datosday$stepsbyday, breaks = 10, xlab = "Number of Steps by Day", main = "Histogram of total steps by day")
-```
+![plot of chunk unnamed-chunk-1](figure/unnamed-chunk-1-1.png) 
 
-```{r, 2. Initial Mean and Median}
 
+```r
 m <- mean(datosday$stepsbyday, na.rm= TRUE)
 mf <- format(m, nsmall = 2)
 m
+```
+
+```
+## [1] 10767.19
+```
+
+```r
 md <- median(datosday$stepsbyday, na.rm= TRUE)
 mdf <- format(md, nsmall = 2)
 md
 ```
-The mean of the total number of steps is `r mf` and the corresponding median is `r mdf`
+
+```
+## [1] 10766
+```
+The mean of the total number of steps is 10767.19 and the corresponding median is 10766.00
 Note: I still don't have an explanation of why the value given here for the median is the real plus one. It's easy to verify it visually. The value returned by the function in the console is 10765 and here it is 10766. 
 
 ### 2. What is the average daily activity pattern?
-```{r, 2. Time series plot, echo = FALSE}
+![plot of chunk 2. Time series plot](figure/2. Time series plot-1.png) 
 
-xinter <- datos %>% group_by(interval) %>% summarise(pxi = mean(steps, na.rm=TRUE))
-xinterorder <- xinter[order(as.numeric(xinter$interval)),]
-plot(xinterorder$interval, xinterorder$pxi, type="l", xlab = "5 minutes Interval", ylab = "Average number of steps per day", main = "24 Hours Time Series Plot")
-max(xinter$pxi)
-maxint <- xinter$interval[which(xinter$pxi == max(xinter$pxi))]
-maxint
 ```
-The 5-minute interval that on average across all days in the dataset, contains the maximum number of steps is `r maxint` (08:35 AM)
+## [1] 206.1698
+```
+
+```
+## [1] "835"
+```
+The 5-minute interval that on average across all days in the dataset, contains the maximum number of steps is 835 (08:35 AM)
 
 ### 3. Imputing missing values
 
-```{r, Computing number of Nas}
 
+```r
 sum(is.na(datos))
+```
+
+```
+## [1] 2304
+```
+
+```r
 na <- nrow(datos[!complete.cases(datos),])
 na
 ```
-The number of missing values in the measure variable steps is: `r na`. There are no NA's in the two other columns (checked in case of).
+
+```
+## [1] 2304
+```
+The number of missing values in the measure variable steps is: 2304. There are no NA's in the two other columns (checked in case of).
 
 The filling strategy is replacement of the Na values with the corresponding mean of the same day of the week. It would have been nicer if I had used also the same interval.
 
-```{r, Filling NAs values}
+
+```r
 datos1 <- datos
 datos1$wdays <- weekdays(as.Date((datos1$date)))
 d2 <- datos1 %>% group_by(wdays, interval) %>% summarise(pasos = mean(steps, na.rm = TRUE))
@@ -110,20 +170,55 @@ datosdaywo <- datos1 %>% group_by(date) %>% summarise(stepsbydaywo = sum(steps, 
 hist(datosdaywo$stepsbydaywo, breaks = 10, xlab = "Number of Steps by Day", main = "Histogram of total steps by day (no NA's)")
 ```
 
+![plot of chunk Filling NAs values](figure/Filling NAs values-1.png) 
+
 ### 4. Comparing the results of the data with NAs and without NAs
 
-```{r, Comparison of data}
+
+```r
 mean(datosdaywo$stepsbydaywo, na.rm= TRUE)
+```
+
+```
+## [1] 10821.21
+```
+
+```r
 median(datosdaywo$stepsbydaywo, na.rm= TRUE)
+```
+
+```
+## [1] 11015
+```
+
+```r
 sum(datos1$steps)
+```
+
+```
+## [1] 660093.8
+```
+
+```r
 summary(datosdaywo)
+```
+
+```
+##      date            stepsbydaywo  
+##  Length:61          Min.   :   41  
+##  Class :character   1st Qu.: 8918  
+##  Mode  :character   Median :11015  
+##                     Mean   :10821  
+##                     3rd Qu.:12811  
+##                     Max.   :21194
 ```
 Both, the mean and the median are higher now, after replacing the Na values. The total  
 steps are 15.7% higher, and the number of steps divided by the number of Na's is 38.8.
 
 ### Are there differences in activity patterns between weekdays and weekends?
 
-```{r}
+
+```r
 wd <- which(datos1$wdays == "Saturday" | datos1$wdays == "Sunday")
 weekd <- which(datos1$wdays == "Monday" | datos1$wdays == "Tuesday" | datos1$wdays == "Wednesday" | datos1$wdays == "Thursday" | datos1$wdays == "Friday")
 datos1$wdays[wd] <- "weekend"
@@ -134,3 +229,5 @@ datosdia2$wdays <- factor(c("weekend", "weekdays"))
 datosdia2ord <- datosdia2[order(as.numeric(datosdia2$interval)),]
 xyplot(datosdia2ord$ave ~ as.integer(datosdia2ord$interval) | factor(wdays), data = datosdia2ord, type = "l", layout = c(1, 2), xlab = "5 minutes interval (from 00:00AM to 11:55PM)", ylab = "Average number of steps")
 ```
+
+![plot of chunk unnamed-chunk-2](figure/unnamed-chunk-2-1.png) 
